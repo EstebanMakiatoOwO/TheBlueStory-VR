@@ -1,5 +1,5 @@
 import React, { useRef } from 'react'
-import { Stars, Environment, useTexture } from '@react-three/drei'
+import { Stars, Environment, useTexture, OrbitControls } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { RepeatWrapping } from 'three'
 import { useXR } from '@react-three/xr'
@@ -55,6 +55,7 @@ export function EarthScene({ onTextureTransitionComplete }) {
       <ambientLight intensity={0.4} />
       <directionalLight position={[10, 10, 5]} intensity={0.8} />
       <Environment preset="sunset" />
+      <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
     </>
   )
 }

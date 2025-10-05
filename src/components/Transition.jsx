@@ -25,6 +25,7 @@ const fadeShader = {
 
 export function Transition({ children, onTransitionComplete }) {
   const { isPresenting } = useXR()
+  const [showTransition, setShowTransition] = useState(true)
   const [fadeMaterial] = useState(() => new ShaderMaterial({
     ...fadeShader,
     transparent: true,
@@ -56,9 +57,13 @@ export function Transition({ children, onTransitionComplete }) {
       if (state.progress > 0.7) {
         const fadeProgress = (state.progress - 0.7) / 0.3
         fadeMaterial.uniforms.opacity.value = fadeProgress
+      } else {
+        fadeMaterial.uniforms.opacity.value = 0 // Asegura que el fade no oculte la escena antes de tiempo
       }
     } else if (!state.completed) {
       state.completed = true
+      fadeMaterial.uniforms.opacity.value = 1 // Al final, el fade está completo
+      setShowTransition(false) // Oculta la transición
       onTransitionComplete?.()
     }
   })
@@ -71,6 +76,10 @@ export function Transition({ children, onTransitionComplete }) {
 
     return () => clearTimeout(timer)
   }, [])
+
+  if (!showTransition) {
+    return <>{children}</>
+  }
 
   return (
     <>
