@@ -6,35 +6,32 @@ import { Vector3, RepeatWrapping } from 'three'
 export function EarthScene() {
   const earthRef = useRef()
   
-  // Usar imagen en lugar de video
-  const texture = useTexture("/textures/tierra.png")
+  const texture = useTexture(`${import.meta.env.BASE_URL}textures/tierra.png`)
   texture.wrapS = texture.wrapT = RepeatWrapping
 
   useFrame((state, delta) => {
-    // Rotate the Earth
     if (earthRef.current) {
-      earthRef.current.rotation.y += delta * 0.2  // Rotación más suave
+      earthRef.current.rotation.y += delta * 0.2 
     }
 
-    // Orbit camera around Earth
-    const radius = 8 // Reducido para mejor vista en móviles
-    const speed = 0.1 // Más lento para mejor rendimiento
-    const time = state.clock.elapsedTime * speed
-    
-    // Move camera in a circular path
-    state.camera.position.x = Math.sin(time) * radius
-    state.camera.position.z = Math.cos(time) * radius
-    state.camera.position.y = 2
-    
-    // Always look at Earth's center
-    state.camera.lookAt(new Vector3(0, 0, 0))
+    if (!state.xr.isPresenting) {
+      const radius = 8 
+      const speed = 0.1 
+      const time = state.clock.elapsedTime * speed
+      
+      state.camera.position.x = Math.sin(time) * radius
+      state.camera.position.z = Math.cos(time) * radius
+      state.camera.position.y = 2
+      
+      state.camera.lookAt(new Vector3(0, 0, 0))
+    }
   })
   
   return (
     <>
       <Stars radius={80} depth={40} count={2000} factor={4} saturation={0} fade />
       
-      <mesh ref={earthRef} position={[0, 0, 0]}>
+      <mesh ref={earthRef} position={[0, 1.6, -3]}>
         <sphereGeometry args={[2, 24, 24]}/> 
         <meshStandardMaterial 
           map={texture}
