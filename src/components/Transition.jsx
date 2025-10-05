@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react'
-import { useThree } from '@react-three/fiber'
+import React, { useEffect, useState, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { Vector3, ShaderMaterial } from 'three'
+import { useXR, XROrigin } from '@react-three/xr'
 
-// Shader for smooth fade transition
 const fadeShader = {
   uniforms: {
     opacity: { value: 0 }
@@ -24,7 +24,7 @@ const fadeShader = {
 }
 
 export function Transition({ children, onTransitionComplete }) {
-  const { camera } = useThree()
+  const { isPresenting } = useXR()
   const [fadeMaterial] = useState(() => new ShaderMaterial({
     ...fadeShader,
     transparent: true,
@@ -32,58 +32,60 @@ export function Transition({ children, onTransitionComplete }) {
     depthWrite: false
   }))
 
-  useEffect(() => {
-    const startTransition = () => {
-      // Set initial position
-      camera.position.set(0, 1.7, -15) // Human eye level height
-      
-      // Walking animation
-      let progress = 0
-      let stepPhase = 0
-      const animate = () => {
-        if (progress < 1) {
-          progress += 0.005 // Very slow movement forward
-          stepPhase += 0.1 // Controls up/down movement frequency
-          
-          // Calculate position
-          const z = -15 + (12 * progress) // Move from -15 to -3
-          const y = 1.7 + Math.sin(stepPhase) * 0.05 // Slight up and down movement
-          
-          // Update camera position
-          camera.position.set(0, y, z)
-          
-          // Make camera look slightly up at the Earth as we get closer
-          const lookAtY = 2 + (progress * 0.5) // Gradually look up more
-          camera.lookAt(new Vector3(0, lookAtY, -3))
+  const originRef = useRef()
+  const transitionState = useRef({
+    progress: 0,
+    started: false,
+    completed: false
+  })
 
-          // Smooth fade transition in last 30% of journey
-          if (progress > 0.7) {
-            const fadeProgress = (progress - 0.7) / 0.3 // Normalize to 0-1
-            fadeMaterial.uniforms.opacity.value = fadeProgress
-          }
-          
-          requestAnimationFrame(animate)
-        } else {
-          onTransitionComplete?.()
-        }
+  useFrame(() => {
+    if (!transitionState.current.started || transitionState.current.completed) return
+
+    const state = transitionState.current
+    if (state.progress < 1) {
+      state.progress += 0.005
+
+      if (originRef.current) {
+        // Move XROrigin for VR position
+        const z = -15 + (12 * state.progress)
+        originRef.current.position.z = z
       }
-      animate()
+
+      // Fade effect in last 30% of journey
+      if (state.progress > 0.7) {
+        const fadeProgress = (state.progress - 0.7) / 0.3
+        fadeMaterial.uniforms.opacity.value = fadeProgress
+      }
+    } else if (!state.completed) {
+      state.completed = true
+      onTransitionComplete?.()
     }
-    
-    // Start transition after 5 seconds
-    const timer = setTimeout(startTransition, 5000)
-    
-    // Cleanup
+  })
+
+  useEffect(() => {
+    // Start transition after delay
+    const timer = setTimeout(() => {
+      transitionState.current.started = true
+    }, 1000)
+
     return () => clearTimeout(timer)
-  }, [camera, onTransitionComplete, fadeMaterial])
+  }, [])
 
   return (
     <>
-      {children}
-      <mesh position={[0, 0, -0.1]} renderOrder={999}>
-        <planeGeometry args={[2, 2]} />
-        <primitive object={fadeMaterial} attach="material" />
-      </mesh>
+      <XROrigin 
+        ref={originRef} 
+        position={[0, 0, -15]}
+      >
+        {children}
+      </XROrigin>
+      {!isPresenting && (
+        <mesh position={[0, 0, -0.1]} renderOrder={999}>
+          <planeGeometry args={[2, 2]} />
+          <primitive object={fadeMaterial} attach="material" />
+        </mesh>
+      )}
     </>
   )
 }
