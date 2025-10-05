@@ -1,23 +1,36 @@
 import { Canvas } from '@react-three/fiber'
 import { XR, createXRStore } from '@react-three/xr'
-import { Stars } from '@react-three/drei'
+import { EarthScene } from './scenes/EarthScene'
+import './App.css'
 
 const store = createXRStore()
 
 export default function App() {
-
   return (
-    <>
-      <button onClick={() => store.enterVR()}>Enter VR</button>
-      <Canvas>
+    <div style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0 }}>
+      <button 
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          padding: '10px 20px',
+          background: 'rgba(255,255,255,0.2)',
+          border: '1px solid rgba(255,255,255,0.4)',
+          borderRadius: '5px',
+          color: 'white',
+          cursor: 'pointer'
+        }}
+        onClick={() => store.enterVR()}
+      >
+        Enter VR
+      </button>
+      <Canvas style={{ background: 'black', width: '100%', height: '100%' }}>
         <XR store={store}>
-          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade />
-          <mesh position={[0, 1, -15]}>
-            <sphereGeometry args={[2, 32, 32]}/>
-            <meshStandardMaterial color="blue" />
-          </mesh>
+          <EarthScene />
         </XR>
       </Canvas>
-    </>
+    </div>
   )
 }
