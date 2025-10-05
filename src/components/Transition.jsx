@@ -67,7 +67,7 @@ export function Transition({ children, onTransitionComplete }) {
     // Start transition after delay
     const timer = setTimeout(() => {
       transitionState.current.started = true
-    }, 1000)
+    }, 10000)
 
     return () => clearTimeout(timer)
   }, [])

@@ -1,17 +1,20 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { Stars, Environment, useTexture } from '@react-three/drei'
-import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Vector3, RepeatWrapping } from 'three'
+import { RepeatWrapping } from 'three'
 import { useXR } from '@react-three/xr'
+import { TextureTransition } from '../components/TextureTransition'
 
-export function EarthScene() {
+export function EarthScene({ onTextureTransitionComplete }) {
   const earthRef = useRef()
   const starsRef = useRef()
   const { isPresenting } = useXR()
   
-  const texture = useTexture(`${import.meta.env.BASE_URL}textures/tierra.png`)
-  texture.wrapS = texture.wrapT = RepeatWrapping
+  // Load both textures
+  const textureA = useTexture(`${import.meta.env.BASE_URL}textures/tierra.png`)
+  const textureB = useTexture(`${import.meta.env.BASE_URL}textures/tierra_ocean_colors.jpg`) // Will be updated with new texture
+  textureA.wrapS = textureA.wrapT = RepeatWrapping
+  textureB.wrapS = textureB.wrapT = RepeatWrapping
 
   useFrame((state, delta) => {
     if (earthRef.current) {
@@ -35,16 +38,18 @@ export function EarthScene() {
         />
       </group>
       
+      
       <group position={[0, isPresenting ? 1.6 : 0, -4]}>
-        <mesh ref={earthRef}>
-          <sphereGeometry args={[1.5, 32, 32]}/> 
-          <meshStandardMaterial 
-            map={texture}
-            roughness={0.7}
-            metalness={0.3}
-            envMapIntensity={0.8}
-          />
-        </mesh>
+        <TextureTransition
+          textureA={textureA}
+          textureB={textureB}
+          onComplete={onTextureTransitionComplete}
+          speed={0.3}
+        >
+          <mesh ref={earthRef} >
+            <sphereGeometry args={[5, 32, 32]}/>
+          </mesh>
+        </TextureTransition>
       </group>
 
       <ambientLight intensity={0.4} />
