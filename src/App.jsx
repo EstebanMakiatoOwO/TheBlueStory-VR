@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { XR, createXRStore } from '@react-three/xr'
+import { VRButton, XR, useXR, createXRStore } from '@react-three/xr'
 import { EarthScene } from './scenes/EarthScene'
 import { Transition } from './components/Transition'
 import { Menu } from './components/Menu'
@@ -8,12 +8,54 @@ import './App.css'
 
 const store = createXRStore()
 
+function Scene() {
+  const { isPresenting } = useXR()
+
+  useEffect(() => {
+    if (isPresenting) {
+      console.log('VR session started')
+    } else {
+      console.log('VR session ended')
+    }
+  }, [isPresenting])
+
+  return (
+    <>
+      <Transition onTransitionComplete={() => console.log('Transition complete')}>
+        <EarthScene />
+      </Transition>
+    </>
+  )
+}
+
 export default function App() {
   const [showMenu, setShowMenu] = useState(true)
+  const [vrSupported, setVRSupported] = useState(false)
 
-  const handleStartVR = () => {
-    setShowMenu(false)
-    store.enterVR()
+  useEffect(() => {
+    // Check if WebXR is supported
+    if ('xr' in navigator) {
+      navigator.xr.isSessionSupported('immersive-vr')
+        .then(supported => {
+          setVRSupported(supported)
+          console.log('VR Support:', supported)
+        })
+    }
+  }, [])
+
+  const handleStartVR = async () => {
+    if (!vrSupported) {
+      alert('VR is not supported in your browser or no VR device is connected')
+      return
+    }
+    
+    try {
+      setShowMenu(false)
+      store.enterVR()
+    } catch (error) {
+      console.error('Error entering VR:', error)
+      setShowMenu(true)
+    }
   }
 
   const handleStartNonVR = () => {
@@ -26,31 +68,10 @@ export default function App() {
         <Menu onStartVR={handleStartVR} onStartNonVR={handleStartNonVR} />
       ) : (
         <>
-          {store.isPresenting && (
-            <button 
-              style={{
-                position: 'fixed',
-                bottom: '20px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 1000,
-                padding: '10px 20px',
-                background: 'rgba(255,255,255,0.2)',
-                border: '1px solid rgba(255,255,255,0.4)',
-                borderRadius: '5px',
-                color: 'white',
-                cursor: 'pointer'
-              }}
-              onClick={() => store.exitVR()}
-            >
-              Exit VR
-            </button>
-          )}
+          <VRButton store={store} />
           <Canvas style={{ background: 'black', width: '100%', height: '100%' }}>
-            <XR store={store}>
-              <Transition onTransitionComplete={() => console.log('Transition complete')}>
-                <EarthScene />
-              </Transition>
+            <XR referenceSpace="local" store={store}>
+              <Scene />
             </XR>
           </Canvas>
         </>
