@@ -34,9 +34,8 @@ export function EarthScene() {
     <>
       <Stars radius={80} depth={40} count={2000} factor={4} saturation={0} fade />
       
-      {/* Center the Earth at origin */}
       <mesh ref={earthRef} position={[0, 0, 0]}>
-        <sphereGeometry args={[2, 24, 24]}/> {/* Reducida la geometría para mejor rendimiento */}
+        <sphereGeometry args={[2, 24, 24]}/> 
         <meshStandardMaterial 
           map={texture}
           roughness={0.7}
@@ -45,7 +44,6 @@ export function EarthScene() {
         />
       </mesh>
 
-      {/* Lighting optimizado */}
       <ambientLight intensity={0.4} />
       <directionalLight position={[10, 10, 5]} intensity={0.8} />
       <Environment preset="sunset" />
