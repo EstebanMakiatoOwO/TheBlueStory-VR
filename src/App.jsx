@@ -1,57 +1,32 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { VRButton, XR, useXR, createXRStore } from '@react-three/xr'
+import { XR, createXRStore } from '@react-three/xr'
 import { EarthScene } from './scenes/EarthScene'
 import { Transition } from './components/Transition'
 import { Menu } from './components/Menu'
 import './App.css'
 
-const store = createXRStore()
+// Create XR store at the root level
+const xrStore = createXRStore()
 
 function Scene() {
-  const { isPresenting } = useXR()
-
-  useEffect(() => {
-    if (isPresenting) {
-      console.log('VR session started')
-    } else {
-      console.log('VR session ended')
-    }
-  }, [isPresenting])
-
   return (
-    <>
-      <Transition onTransitionComplete={() => console.log('Transition complete')}>
-        <EarthScene />
-      </Transition>
-    </>
+    <Transition onTransitionComplete={() => console.log('Transition complete')}>
+      <EarthScene />
+    </Transition>
   )
 }
 
 export default function App() {
   const [showMenu, setShowMenu] = useState(true)
-  const [vrSupported, setVRSupported] = useState(false)
-
-  useEffect(() => {
-    // Check if WebXR is supported
-    if ('xr' in navigator) {
-      navigator.xr.isSessionSupported('immersive-vr')
-        .then(supported => {
-          setVRSupported(supported)
-          console.log('VR Support:', supported)
-        })
-    }
-  }, [])
 
   const handleStartVR = async () => {
-    if (!vrSupported) {
-      alert('VR is not supported in your browser or no VR device is connected')
-      return
-    }
-    
     try {
       setShowMenu(false)
-      store.enterVR()
+      // Small delay to ensure scene is mounted
+      setTimeout(() => {
+        xrStore.enterVR()
+      }, 100)
     } catch (error) {
       console.error('Error entering VR:', error)
       setShowMenu(true)
@@ -67,14 +42,11 @@ export default function App() {
       {showMenu ? (
         <Menu onStartVR={handleStartVR} onStartNonVR={handleStartNonVR} />
       ) : (
-        <>
-          <VRButton store={store} />
-          <Canvas style={{ background: 'black', width: '100%', height: '100%' }}>
-            <XR referenceSpace="local" store={store}>
-              <Scene />
-            </XR>
-          </Canvas>
-        </>
+        <Canvas style={{ background: 'black', width: '100%', height: '100%' }}>
+          <XR store={xrStore}>
+            <Scene />
+          </XR>
+        </Canvas>
       )}
     </div>
   )
