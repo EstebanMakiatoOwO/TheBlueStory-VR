@@ -5,12 +5,15 @@ import { useFrame, useThree } from '@react-three/fiber'
 
 export function BeachScene() {
   // Carga mapas de arena
-  const sandTexture = useTexture(`${import.meta.env.BASE_URL}textures/materials/sand/aerial_beach_01_diff_1k.jpg`)
-  const sandDisplacement = useTexture(`${import.meta.env.BASE_URL}textures/materials/sand/aerial_beach_01_disp_1k.png`)
-  const sandRoughness = useTexture(`${import.meta.env.BASE_URL}textures/materials/sand/aerial_beach_01_rough_1k.jpg`)
-  sandTexture.wrapS = sandTexture.wrapT = THREE.RepeatWrapping
-  sandDisplacement.wrapS = sandDisplacement.wrapT = THREE.RepeatWrapping
-  sandRoughness.wrapS = sandRoughness.wrapT = THREE.RepeatWrapping
+const sandTexture = useTexture(`${import.meta.env.BASE_URL}textures/materials/sand/aerial_beach_01_diff_1k.jpg`)
+const sandDisplacement = useTexture(`${import.meta.env.BASE_URL}textures/materials/sand/aerial_beach_01_disp_1k.png`)
+const sandRoughness = useTexture(`${import.meta.env.BASE_URL}textures/materials/sand/aerial_beach_01_rough_1k.jpg`)
+sandTexture.wrapS = sandTexture.wrapT = THREE.RepeatWrapping
+sandDisplacement.wrapS = sandDisplacement.wrapT = THREE.RepeatWrapping
+sandRoughness.wrapS = sandRoughness.wrapT = THREE.RepeatWrapping
+sandTexture.repeat.set(20, 30)
+sandDisplacement.repeat.set(10, 30)
+sandRoughness.repeat.set(10, 30)
 
   // Geometría personalizada para la arena con pendiente
   const sandWidth = 100
@@ -67,12 +70,40 @@ export function BeachScene() {
   })
 
   // Animar la luna descendiendo usando useFrame para no afectar las nubes
-  const moonY = React.useRef(16)
-  useFrame(() => {
-    if (moonY.current > 2) {
-      moonY.current -= 1
+const moonRef = React.useRef()
+const [sceneTransition, setSceneTransition] = React.useState(false)
+const moonTexture = useTexture(`${import.meta.env.BASE_URL}textures/luna.jpg`)
+let elapsedTime = 0
+useFrame(({ camera }, delta) => {
+  elapsedTime += delta
+if (elapsedTime > 10 && moonRef.current) { // Start after 10 seconds
+    moonRef.current.position.y -= 0.01 // Smoothly decrease the moon's Y position
+    camera.position.lerp(
+      new THREE.Vector3(moonRef.current.position.x, moonRef.current.position.y + 5, moonRef.current.position.z + 20),
+      0.02
+    )
+    camera.lookAt(moonRef.current.position)
+    if (moonRef.current.position.y <= -10) {
+      setSceneTransition(true) // Trigger scene transition
     }
-  })
+  }
+})
+
+if (sceneTransition) {
+  return (
+    <mesh ref={moonRef} position={[0, -10, -120]} rotation={[0, 18, 0]}>
+      <sphereGeometry args={[30, 32, 50]} />
+      <meshStandardMaterial 
+        map={moonTexture}
+        color="#fff"
+        metalness={0.2}
+        roughness={0.7}
+        emissive="#e0eafc"
+        emissiveIntensity={0.1}
+      />
+    </mesh>
+  )
+}
 
   return (
     <>
@@ -102,10 +133,11 @@ export function BeachScene() {
         />
       </group>
       {/* Luna brillante */}
-      <mesh position={[0, moonY.current, -120]} rotation={[0, 18, 0]}>
+const moonTexture = useTexture(`${import.meta.env.BASE_URL}textures/luna.jpg`);
+<mesh ref={moonRef} position={[0, 16, -120]} rotation={[0, 18, 0]}>
         <sphereGeometry args={[30, 32, 50]} />
         <meshStandardMaterial 
-          map={useTexture(`${import.meta.env.BASE_URL}textures/luna.jpg`)}
+          map={moonTexture}
           color="#fff"
           metalness={0.2}
           roughness={0.7}
